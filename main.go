@@ -7,7 +7,9 @@ import (
 	"bbgre/utils"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -31,6 +33,16 @@ func main() {
 	}
 	fmt.Println("[Gorm] Database migrated successfully")
 	r := gin.Default()
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	r.GET("/", func(c *gin.Context) {
 		c.String(200, "Server is running")
 	})
@@ -41,22 +53,26 @@ func main() {
 			Password string `json:"password" binding:"required"`
 		}
 		if err := c.ShouldBindJSON(&loginData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": err.Error()})
 			return
 		}
 
 		user, err := service.Login(loginData.Username, loginData.Password)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"code": 400, "error": err.Error()})
 			return
 		}
 
 		token, err := utils.GenerateToken(user.ID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 400, "error": "Failed to generate token"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"token": token})
+		c.JSON(http.StatusOK, gin.H{"code": 200, "message": "success", "data": gin.H{
+			"user":  user,
+			"token": token,
+		}})
 	})
-	r.Run()
+
+	r.Run(":8889")
 }
