@@ -2,6 +2,7 @@ package service
 
 import (
 	"bbgre/global"
+	"bbgre/middleware"
 	"bbgre/model"
 	"time"
 
@@ -18,7 +19,7 @@ func CreateArticle(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		middleware.Error(c, 400, "Paramas Error", err.Error())
 		return
 	}
 
@@ -30,15 +31,16 @@ func CreateArticle(c *gin.Context) {
 	}
 
 	if err := global.DB.Create(&article).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		middleware.Error(c, 500, "Create article failed", err.Error())
 		return
 	}
 
-	c.JSON(201, gin.H{
+	middleware.Success(c, gin.H{
 		"id":         article.ID,
 		"title":      article.Title,
 		"uri":        article.Uri,
-		"created_at": article.CreatedAt.Format(time.RFC3339)})
+		"created_at": article.CreatedAt.Format(time.RFC3339),
+	})
 
 }
 
@@ -48,11 +50,11 @@ func UpdateArticle(c *gin.Context) {
 
 	var article model.Article
 	if err := global.DB.Where("id = ?", articleID).First(&article).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Article not found"})
+		middleware.Error(c, 404, "Article not found", err.Error())
 		return
 	}
 	if article.GetAuthorId() != userID.(uint) {
-		c.JSON(403, gin.H{"error": "You are not the author of this article"})
+		middleware.Error(c, 403, "You are not the author of this article", nil)
 		return
 	}
 
@@ -62,7 +64,7 @@ func UpdateArticle(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		middleware.Error(c, 400, "Paramas Error", err.Error())
 		return
 	}
 
@@ -75,11 +77,11 @@ func UpdateArticle(c *gin.Context) {
 	}
 
 	if err := global.DB.Model(&article).Updates(updates).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		middleware.Error(c, 500, "Update article failed", err.Error())
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Article updated successfully"})
+	middleware.SuccessMessageOnly(c, "Article updated successfully")
 
 }
 
@@ -89,28 +91,28 @@ func DeleteArticle(c *gin.Context) {
 
 	var article model.Article
 	if err := global.DB.Where("id = ?", articleID).First(&article).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Article not found"})
+		middleware.Error(c, 404, "Article not found", err.Error())
 		return
 	}
 
 	if article.GetAuthorId() != userID.(uint) {
-		c.JSON(403, gin.H{"error": "You are not the author of this article"})
+		middleware.Error(c, 403, "You are not the author of this article", nil)
 		return
 	}
 
 	if err := global.DB.Delete(&article).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		middleware.Error(c, 500, "Delete article failed", err.Error())
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Article deleted successfully"})
+	middleware.SuccessMessageOnly(c, "Article deleted successfully")
 
 }
 
 func GetArticles(c *gin.Context) {
 	var articles []model.Article
 	if err := global.DB.Find(&articles).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		middleware.Error(c, 500, "Get articles failed", err.Error())
 		return
 	}
 
@@ -124,7 +126,11 @@ func GetArticles(c *gin.Context) {
 		})
 	}
 
-	c.JSON(200, response)
+	if response == nil {
+		response = []gin.H{}
+	}
+
+	middleware.Success(c, response)
 
 }
 
@@ -137,13 +143,14 @@ func GetArticle(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{
+	middleware.Success(c, gin.H{
 		"id":         article.ID,
 		"title":      article.Title,
 		"uri":        article.Uri,
 		"content":    article.Content,
 		"created_at": article.CreatedAt.Format(time.RFC3339),
 	})
+
 }
 
 func GetArticleByUri(c *gin.Context) {
@@ -151,11 +158,11 @@ func GetArticleByUri(c *gin.Context) {
 
 	var article model.Article
 	if err := global.DB.Where("uri = ?", uri).First(&article).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Article not found"})
+		middleware.Error(c, 404, "Article not found", err.Error())
 		return
 	}
 
-	c.JSON(200, gin.H{
+	middleware.Success(c, gin.H{
 		"id":         article.ID,
 		"title":      article.Title,
 		"uri":        article.Uri,

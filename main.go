@@ -2,11 +2,10 @@ package main
 
 import (
 	"bbgre/global"
+	"bbgre/middleware"
 	"bbgre/model"
 	"bbgre/service"
-	"bbgre/utils"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -57,7 +56,7 @@ func main() {
 	}
 
 	auth := r.Group("/api")
-	auth.Use(utils.JWTAuthMiddleware())
+	auth.Use(middleware.JWTAuthMiddleware())
 	{
 		auth.POST("/articles", service.CreateArticle)
 		auth.PUT("/articles/:id", service.UpdateArticle)
@@ -68,32 +67,7 @@ func main() {
 		c.String(200, "Server is running")
 	})
 
-	r.POST("/login", func(c *gin.Context) {
-		var loginData struct {
-			Username string `json:"username" binding:"required"`
-			Password string `json:"password" binding:"required"`
-		}
-		if err := c.ShouldBindJSON(&loginData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": err.Error()})
-			return
-		}
-
-		user, err := service.Login(loginData.Username, loginData.Password)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"code": 400, "error": err.Error()})
-			return
-		}
-
-		token, err := utils.GenerateToken(user.ID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"code": 400, "error": "Failed to generate token"})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"code": 200, "message": "success", "data": gin.H{
-			"user":  user,
-			"token": token,
-		}})
-	})
+	r.POST("/login", service.HandleLogin)
 
 	r.Run(":8889")
 }
