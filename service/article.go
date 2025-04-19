@@ -85,6 +85,46 @@ func UpdateArticle(c *gin.Context) {
 
 }
 
+func UpdateArticleByUri(c *gin.Context) {
+	userID, _ := c.Get("userID")
+	articleUri := c.Param("uri")
+
+	var article model.Article
+	if err := global.DB.Where("uri = ?", articleUri).First(&article).Error; err != nil {
+		middleware.Error(c, 404, "Article not found", err.Error())
+		return
+	}
+	if article.GetAuthorId() != userID.(uint) {
+		middleware.Error(c, 403, "You are not the author of this article", nil)
+		return
+	}
+
+	var input struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		middleware.Error(c, 400, "Paramas Error", err.Error())
+		return
+	}
+
+	updates := make(map[string]interface{})
+	if input.Title != "" {
+		updates["title"] = input.Title
+	}
+	if input.Content != "" {
+		updates["content"] = input.Content
+	}
+
+	if err := global.DB.Model(&article).Updates(updates).Error; err != nil {
+		middleware.Error(c, 500, "Update article failed", err.Error())
+		return
+	}
+
+	middleware.SuccessMessageOnly(c, "Article updated successfully")
+}
+
 func DeleteArticle(c *gin.Context) {
 	userID, _ := c.Get("userID")
 	articleID := c.Param("id")

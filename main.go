@@ -18,7 +18,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 
 	fmt.Println("[Blog] Welcome")
-	dsn := "root:root@tcp(127.0.0.1:3306)/blog?charset=utf8&parseTime=True&loc=Local"
+	dsn := "root:root@tcp(127.0.0.1:3306)/blog?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		fmt.Println("[Gorm]", err)
@@ -43,7 +43,7 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "x-token"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -53,6 +53,7 @@ func main() {
 	{
 		public.GET("/articles", service.GetArticles)
 		public.GET("/articles/:id", service.GetArticle)
+		public.GET("/articles/uri/:uri", service.GetArticleByUri)
 	}
 
 	auth := r.Group("/api")
@@ -60,6 +61,7 @@ func main() {
 	{
 		auth.POST("/articles", service.CreateArticle)
 		auth.PUT("/articles/:id", service.UpdateArticle)
+		auth.PUT("/articles/uri/:uri", service.UpdateArticleByUri)
 		auth.DELETE("/articles/:id", service.DeleteArticle)
 	}
 
