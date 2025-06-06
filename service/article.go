@@ -210,3 +210,26 @@ func GetArticleByUri(c *gin.Context) {
 		"created_at": article.CreatedAt.Format(time.RFC3339),
 	})
 }
+
+func DeleteArticleByUri(c *gin.Context) {
+	userID, _ := c.Get("userID")
+	articleUri := c.Param("uri")
+
+	var article model.Article
+	if err := global.DB.Where("uri = ?", articleUri).First(&article).Error; err != nil {
+		middleware.Error(c, 404, "Article not found", err.Error())
+		return
+	}
+
+	if article.GetAuthorId() != userID.(uint) {
+		middleware.Error(c, 403, "You are not the author of this article", nil)
+		return
+	}
+
+	if err := global.DB.Delete(&article).Error; err != nil {
+		middleware.Error(c, 500, "Delete article failed", err.Error())
+		return
+	}
+
+	middleware.SuccessMessageOnly(c, "Article deleted successfully")
+}

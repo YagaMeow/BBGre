@@ -6,7 +6,7 @@ import (
 
 type Article struct {
 	gorm.Model
-	Uri      string `json:"uri" gorm:"unique;not null"`
+	Uri      string `json:"uri" gorm:"type:varchar(255);not null"`
 	Title    string `json:"title" gorm:"not null"`
 	Content  string `json:"content" gorm:"not null"`
 	AuthorId uint   `json:"author_id"`
