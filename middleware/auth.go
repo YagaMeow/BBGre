@@ -10,7 +10,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.Request.Header.Get("x-token")
 		if tokenString == "" {
-			c.JSON(401, gin.H{"error": "Authorization header is missing"})
+			Error(c, 401, "Unauthorized", "Authorization header is missing")
 			c.Abort()
 			return
 		}

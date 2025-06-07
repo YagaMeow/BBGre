@@ -63,6 +63,7 @@ func main() {
 		auth.PUT("/articles/:id", service.UpdateArticle)
 		auth.PUT("/articles/uri/:uri", service.UpdateArticleByUri)
 		auth.DELETE("/articles/uri/:uri", service.DeleteArticleByUri)
+		auth.POST("/auth", service.AuthorizeUser)
 	}
 
 	r.GET("/", func(c *gin.Context) {
