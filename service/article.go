@@ -30,6 +30,11 @@ func CreateArticle(c *gin.Context) {
 		AuthorId: userID.(uint),
 	}
 
+	if hasCreated := global.DB.Where("uri = ?", article.Uri).First(&model.Article{}).RowsAffected; hasCreated > 0 {
+		middleware.Error(c, 400, "Article with this URI already exists", nil)
+		return
+	}
+
 	if err := global.DB.Create(&article).Error; err != nil {
 		middleware.Error(c, 500, "Create article failed", err.Error())
 		return
