@@ -54,6 +54,7 @@ func main() {
 		public.GET("/articles", service.GetArticles)
 		public.GET("/articles/:id", service.GetArticle)
 		public.GET("/articles/uri/:uri", service.GetArticleByUri)
+		public.Static("/uploads", "./uploads")
 	}
 
 	auth := r.Group("/api")
@@ -64,6 +65,7 @@ func main() {
 		auth.PUT("/articles/uri/:uri", service.UpdateArticleByUri)
 		auth.DELETE("/articles/uri/:uri", service.DeleteArticleByUri)
 		auth.POST("/auth", service.AuthorizeUser)
+		auth.POST("/upload", service.UploadHandler)
 	}
 
 	r.GET("/", func(c *gin.Context) {
