@@ -4,6 +4,7 @@ import (
 	"bbgre/global"
 	"bbgre/middleware"
 	"bbgre/model"
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -168,6 +169,7 @@ func GetArticles(c *gin.Context) {
 			"title":      article.Title,
 			"uri":        article.Uri,
 			"created_at": article.CreatedAt.Format(time.RFC3339),
+			"tag":        article.Tags,
 		})
 	}
 
@@ -194,6 +196,7 @@ func GetArticle(c *gin.Context) {
 		"uri":        article.Uri,
 		"content":    article.Content,
 		"created_at": article.CreatedAt.Format(time.RFC3339),
+		"tags":       article.Tags,
 	})
 
 }
@@ -213,6 +216,7 @@ func GetArticleByUri(c *gin.Context) {
 		"uri":        article.Uri,
 		"content":    article.Content,
 		"created_at": article.CreatedAt.Format(time.RFC3339),
+		"tags":       article.Tags,
 	})
 }
 
@@ -237,4 +241,124 @@ func DeleteArticleByUri(c *gin.Context) {
 	}
 
 	middleware.SuccessMessageOnly(c, "Article deleted successfully")
+}
+
+func AddTagToArticle(c *gin.Context) {
+	// userID, _ := c.Get("userID")
+	var input struct {
+		ID  uint   `json:"id"`
+		Tag string `json:"tag"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		middleware.Error(c, 400, "Paramas Error", err.Error())
+		return
+	}
+
+	var article model.Article
+	var Tag model.Tag
+	if err := global.DB.Where("name = ?", input.Tag).First(&Tag).Error; err != nil {
+		Tag = model.Tag{
+			Name: input.Tag,
+		}
+		if err := global.DB.Create(&Tag).Error; err != nil {
+			middleware.Error(c, 500, "Create tag failed.", err.Error())
+			return
+		}
+	}
+	if err := global.DB.Where("id = ?", input.ID).First(&article).Error; err != nil {
+		middleware.Error(c, 404, "Article not found.", err.Error())
+		return
+	}
+
+	if err := global.DB.Model(&article).Association("Tags").Append(&Tag); err != nil {
+		middleware.Error(c, 500, "Add tag failed.", err.Error())
+		return
+	}
+
+	middleware.Success(c, gin.H{
+		"id":         article.ID,
+		"title":      article.Title,
+		"uri":        article.Uri,
+		"content":    article.Content,
+		"created_at": article.CreatedAt.Format(time.RFC3339),
+		"tags":       article.Tags,
+	})
+
+}
+
+func RemoveTagFromArticle(c *gin.Context) {
+	var input struct {
+		ID  uint   `json:"id"`
+		Tag string `json:"tag"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		middleware.Error(c, 400, "Params error.", err.Error())
+		return
+	}
+
+	var tag model.Tag
+	if err := global.DB.Where("name = ?", input.Tag).First(&tag).Error; err != nil {
+		middleware.Error(c, 404, "Tag not found.", err.Error())
+		return
+	}
+	var article model.Article
+	if err := global.DB.Where("id = ?", input.ID).First(&article).Error; err != nil {
+		middleware.Error(c, 404, "Article not found.", err.Error())
+		return
+	}
+
+	tx := global.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+	// 删除文章与标签的关联
+	if err := tx.Model(&article).Association("Tags").Delete(&tag); err != nil {
+		tx.Rollback()
+		fmt.Println(err.Error())
+		middleware.Error(c, 500, "Delete tag failed.", err.Error())
+		return
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+	// 检查该标签是否还被其他文章使用
+	count := tx.Model(&tag).Association("Articles").Count()
+
+	// 如果没有其他文章使用该标签，则删除标签
+	if count == 0 {
+		if err := tx.Delete(&tag).Error; err != nil {
+			tx.Rollback()
+			middleware.Error(c, 500, "Failed to delete unused tag", err.Error())
+			return
+		}
+	}
+
+	// 重新加载文章及其标签
+	if err := tx.Preload("Tags").First(&article, article.ID).Error; err != nil {
+		tx.Rollback()
+		middleware.Error(c, 500, "Failed to load article with tags", err.Error())
+		return
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		middleware.Error(c, 500, "Transaction commit failed", err.Error())
+		return
+	}
+
+	middleware.Success(c, gin.H{
+		"id":         article.ID,
+		"title":      article.Title,
+		"uri":        article.Uri,
+		"content":    article.Content,
+		"created_at": article.CreatedAt.Format(time.RFC3339),
+		"tags":       article.Tags,
+	})
 }

@@ -10,6 +10,17 @@ type Article struct {
 	Title    string `json:"title" gorm:"not null"`
 	Content  string `json:"content" gorm:"not null"`
 	AuthorId uint   `json:"author_id"`
+	Tags     []Tag  `json:"tags" gorm:"many2many:article_tags;"`
+}
+
+type Tag struct {
+	gorm.Model
+	Name     string    `json:"name" gorm:"size:255;not null"`
+	Articles []Article `json:"articles" gorm:"many2many:article_tags;"`
+}
+
+func (t *Tag) TableName() string {
+	return "tags"
 }
 
 func (a *Article) TableName() string {

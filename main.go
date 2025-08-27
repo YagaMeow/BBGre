@@ -32,7 +32,7 @@ func main() {
 		fmt.Println("[Gorm] Failed to migrate user database", err)
 		return
 	}
-	err = global.DB.AutoMigrate(&model.Article{})
+	err = global.DB.AutoMigrate(&model.Article{}, &model.Tag{})
 	if err != nil {
 		fmt.Println("[Gorm] Failed to migrate article database", err)
 		return
@@ -66,6 +66,8 @@ func main() {
 		auth.DELETE("/articles/uri/:uri", service.DeleteArticleByUri)
 		auth.POST("/auth", service.AuthorizeUser)
 		auth.POST("/upload", service.UploadHandler)
+		auth.POST("/addtag", service.AddTagToArticle)
+		auth.POST("/removetag", service.RemoveTagFromArticle)
 	}
 
 	r.GET("/", func(c *gin.Context) {
