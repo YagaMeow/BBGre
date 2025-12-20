@@ -11,6 +11,9 @@ type Article struct {
 	Content  string `json:"content" gorm:"not null"`
 	AuthorId uint   `json:"author_id"`
 	Tags     []Tag  `json:"tags" gorm:"many2many:article_tags;"`
+	CoverUrl string `json:"cover_url"`
+	CoverH   uint
+	CoverW   uint
 }
 
 type Tag struct {
@@ -49,4 +52,8 @@ func (a *Article) GetCreatedAt() string {
 
 func (a *Article) GetAuthorId() uint {
 	return a.AuthorId
+}
+
+func (a *Article) GetCoverUrl() string {
+	return a.CoverUrl
 }

@@ -4,7 +4,9 @@ import (
 	"bbgre/global"
 	"bbgre/middleware"
 	"bbgre/model"
+	"bbgre/utils"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -170,6 +172,11 @@ func GetArticles(c *gin.Context) {
 			"uri":        article.Uri,
 			"created_at": article.CreatedAt.Format(time.RFC3339),
 			"tag":        article.Tags,
+			"cover": gin.H{
+				"cover_url": article.CoverUrl,
+				"height":    article.CoverH,
+				"width":     article.CoverW,
+			},
 		})
 	}
 
@@ -185,7 +192,7 @@ func GetArticle(c *gin.Context) {
 	articleID := c.Param("id")
 
 	var article model.Article
-	if err := global.DB.Where("id = ?", articleID).First(&article).Error; err != nil {
+	if err := global.DB.First(&article, articleID).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Article not found"})
 		return
 	}
@@ -360,5 +367,62 @@ func RemoveTagFromArticle(c *gin.Context) {
 		"content":    article.Content,
 		"created_at": article.CreatedAt.Format(time.RFC3339),
 		"tags":       article.Tags,
+	})
+}
+
+func UploadCover(c *gin.Context) {
+
+	file, err := c.FormFile("file")
+	uri := c.PostForm("uri")
+
+	var article model.Article
+	if err := global.DB.Model(&model.Article{}).Where("uri = ?", uri).First(&article).Error; err != nil {
+		middleware.Error(c, 404, "Article not found.", err)
+		return
+	}
+
+	if err != nil {
+		middleware.Error(c, 500, "Upload Failed", err.Error())
+		return
+	}
+
+	fileExt := filepath.Ext(file.Filename)
+	newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), fileExt)
+	dst := filepath.Join("./covers", newFileName)
+	if err := c.SaveUploadedFile(file, dst); err != nil {
+		middleware.Error(c, 500, "Save File Failed", err.Error())
+		return
+	}
+
+	width, height, err := utils.GetImageDimensions(dst)
+	if err != nil {
+		fmt.Println("Failed to parse image", err)
+		width = 0
+		height = 0
+	}
+
+	fileUrl := fmt.Sprintf("/covers/%s", newFileName)
+	article.CoverUrl = fileUrl
+
+	updates := make(map[string]interface{})
+	updates["cover_url"] = fileUrl
+	updates["cover_h"] = height
+	updates["cover_w"] = width
+	if err := global.DB.Model(&article).Updates(updates).Error; err != nil {
+		middleware.Error(c, 500, "Update cover failed", err.Error())
+		return
+	}
+	middleware.Success(c, gin.H{
+		"id":         article.ID,
+		"title":      article.Title,
+		"uri":        article.Uri,
+		"content":    article.Content,
+		"created_at": article.CreatedAt.Format(time.RFC3339),
+		"tags":       article.Tags,
+		"cover": gin.H{
+			"cover_url": article.CoverUrl,
+			"height":    article.CoverH,
+			"width":     article.CoverW,
+		},
 	})
 }

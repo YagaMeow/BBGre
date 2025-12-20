@@ -55,15 +55,20 @@ func main() {
 		public.GET("/articles/:id", service.GetArticle)
 		public.GET("/articles/uri/:uri", service.GetArticleByUri)
 		public.Static("/uploads", "./uploads")
+		public.Static("/covers", "./covers")
 	}
 
 	auth := r.Group("/api")
 	auth.Use(middleware.JWTAuthMiddleware())
 	{
-		auth.POST("/articles", service.CreateArticle)
-		auth.PUT("/articles/:id", service.UpdateArticle)
-		auth.PUT("/articles/uri/:uri", service.UpdateArticleByUri)
-		auth.DELETE("/articles/uri/:uri", service.DeleteArticleByUri)
+		articles := auth.Group("/articles")
+		{
+			articles.POST("/", service.CreateArticle)
+			articles.PUT("/:id", service.UpdateArticle)
+			articles.PUT("/uri/:uri", service.UpdateArticleByUri)
+			articles.DELETE("/uri/:uri", service.DeleteArticleByUri)
+			articles.POST("/cover", service.UploadCover)
+		}
 		auth.POST("/auth", service.AuthorizeUser)
 		auth.POST("/upload", service.UploadHandler)
 		auth.POST("/addtag", service.AddTagToArticle)
