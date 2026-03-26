@@ -372,7 +372,7 @@ func RemoveTagFromArticle(c *gin.Context) {
 
 func UploadCover(c *gin.Context) {
 
-	file, err := c.FormFile("file")
+	fileHeader, err := c.FormFile("file")
 	uri := c.PostForm("uri")
 
 	var article model.Article
@@ -385,11 +385,17 @@ func UploadCover(c *gin.Context) {
 		middleware.Error(c, 500, "Upload Failed", err.Error())
 		return
 	}
-
-	fileExt := filepath.Ext(file.Filename)
+	file, err := fileHeader.Open()
+	if err != nil {
+		middleware.Error(c, 500, "Server Error", err.Error())
+		return
+	}
+	defer file.Close()
+	fileExt := filepath.Ext(fileHeader.Filename)
 	newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), fileExt)
 	dst := filepath.Join("./covers", newFileName)
-	if err := c.SaveUploadedFile(file, dst); err != nil {
+
+	if err := SizeHandler(file, newFileName, "./covers"); err != nil {
 		middleware.Error(c, 500, "Save File Failed", err.Error())
 		return
 	}
