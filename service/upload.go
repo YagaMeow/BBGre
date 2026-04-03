@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chai2010/webp"
+	"github.com/HugoSmits86/nativewebp"
 	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
 )
@@ -79,7 +79,7 @@ func SizeHandler(file io.Reader, filename string, path string) error {
 		if err := os.MkdirAll(webpDir, 0755); err != nil {
 			return fmt.Errorf("Create folder failed: %w", err)
 		}
-		if err := saveAsWebp(dstImg, webpPath, 80); err != nil {
+		if err := saveAsWebp(dstImg, webpPath); err != nil {
 			fmt.Println(err)
 			return err
 		}
@@ -87,11 +87,11 @@ func SizeHandler(file io.Reader, filename string, path string) error {
 	return nil
 }
 
-func saveAsWebp(img image.Image, path string, quality float32) error {
+func saveAsWebp(img image.Image, path string) error {
 	out, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
-	return webp.Encode(out, img, &webp.Options{Quality: quality})
+	return nativewebp.Encode(out, img, nil)
 }
