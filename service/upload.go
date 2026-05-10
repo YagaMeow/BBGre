@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chai2010/webp"
+	webp "github.com/bep/webptemp"
 	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
 )
@@ -93,5 +93,5 @@ func saveAsWebp(img image.Image, path string, quality float32) error {
 		return err
 	}
 	defer out.Close()
-	return webp.Encode(out, img, &webp.Options{Quality: quality})
+	return webp.Encode(out, img, webp.Options{Quality: int(quality)})
 }

@@ -159,7 +159,7 @@ func DeleteArticle(c *gin.Context) {
 
 func GetArticles(c *gin.Context) {
 	var articles []model.Article
-	if err := global.DB.Find(&articles).Error; err != nil {
+	if err := global.DB.Order("created_at desc").Find(&articles).Error; err != nil {
 		middleware.Error(c, 500, "Get articles failed", err.Error())
 		return
 	}
@@ -371,7 +371,6 @@ func RemoveTagFromArticle(c *gin.Context) {
 }
 
 func UploadCover(c *gin.Context) {
-
 	fileHeader, err := c.FormFile("file")
 	uri := c.PostForm("uri")
 
