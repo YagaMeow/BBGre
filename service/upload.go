@@ -35,7 +35,7 @@ func UploadHandler(c *gin.Context) {
 	fileExt := filepath.Ext(fileHeader.Filename)
 	newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), fileExt)
 
-	if err := SizeHandler(file, newFileName, "./uploads"); err != nil {
+	if _, err := SizeHandler(file, newFileName, "./uploads"); err != nil {
 		middleware.Error(c, 500, "Save File Failed", err.Error())
 		return
 	}
@@ -56,10 +56,10 @@ func UploadHandler(c *gin.Context) {
 	})
 }
 
-func SizeHandler(file io.Reader, filename string, path string) error {
+func SizeHandler(file io.Reader, filename string, path string) (string, error) {
 	srcImg, err := imaging.Decode(file)
 	if err != nil {
-		return err
+		return "", err
 	}
 	basename := strings.TrimSuffix(filename, filepath.Ext(filename))
 	for _, w := range sizes {
@@ -67,24 +67,24 @@ func SizeHandler(file io.Reader, filename string, path string) error {
 		jpegPath := filepath.Join(path+"/jpg", fmt.Sprintf("%s-%dw.jpg", basename, w))
 		jpgDir := filepath.Dir(jpegPath)
 		if err := os.MkdirAll(jpgDir, 0755); err != nil {
-			return fmt.Errorf("Create folder failed: %w", err)
+			return "", fmt.Errorf("Create folder failed: %w", err)
 		}
 		err := imaging.Save(dstImg, jpegPath, imaging.JPEGQuality(85))
 		if err != nil {
 			fmt.Println(err)
-			return err
+			return "", err
 		}
 		webpPath := filepath.Join(path+"/webp", fmt.Sprintf("%s-%dw.webp", basename, w))
 		webpDir := filepath.Dir(webpPath)
 		if err := os.MkdirAll(webpDir, 0755); err != nil {
-			return fmt.Errorf("Create folder failed: %w", err)
+			return "", fmt.Errorf("Create folder failed: %w", err)
 		}
 		if err := saveAsWebp(dstImg, webpPath, 80); err != nil {
 			fmt.Println(err)
-			return err
+			return "", err
 		}
 	}
-	return nil
+	return filepath.Join(path+"/jpg", fmt.Sprintf("%s-%dw.jpg", basename, 1200)), nil
 }
 
 func saveAsWebp(img image.Image, path string, quality float32) error {

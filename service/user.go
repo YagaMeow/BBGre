@@ -7,11 +7,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type LoginRequest struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+//	@Summary	登录
+//	@Produce	json
+//	@Param		request	body		LoginRequest	true	"用户名"
+//	@Success	200		{object}	string			"成功"
+//	@Failure	400		{object}	string			"请求错误"
+//	@Failure	500		{object}	string			"内部错误"
+//	@Router		/login [post]
 func HandleLogin(c *gin.Context) {
-	var loginData struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
+
+	var loginData = LoginRequest{}
 	if err := c.ShouldBindJSON(&loginData); err != nil {
 		middleware.Error(c, 400, "Params Error", err.Error())
 		return

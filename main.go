@@ -12,6 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	_ "bbgre/docs"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
@@ -32,7 +37,7 @@ func main() {
 		fmt.Println("[Gorm] Failed to migrate user database", err)
 		return
 	}
-	err = global.DB.AutoMigrate(&model.Article{}, &model.Tag{})
+	err = global.DB.AutoMigrate(&model.Article{}, &model.Tag{}, &model.CalendarNote{})
 	if err != nil {
 		fmt.Println("[Gorm] Failed to migrate article database", err)
 		return
@@ -49,6 +54,8 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	public := r.Group("/api")
 	{
 		public.GET("/articles", service.GetArticles)
@@ -56,6 +63,7 @@ func main() {
 		public.GET("/articles/uri/:uri", service.GetArticleByUri)
 		public.Static("/uploads", "./uploads")
 		public.Static("/covers", "./covers")
+		public.POST("/notes", service.GetNoteList)
 	}
 
 	auth := r.Group("/api")
@@ -68,6 +76,12 @@ func main() {
 			articles.PUT("/uri/:uri", service.UpdateArticleByUri)
 			articles.DELETE("/uri/:uri", service.DeleteArticleByUri)
 			articles.POST("/cover", service.UploadCover)
+		}
+		notes := auth.Group("/notes")
+		{
+			notes.POST("/", service.CreateNote)
+			notes.POST("/update", service.UpdateNote)
+			notes.DELETE("/update", service.DeleteNote)
 		}
 		auth.POST("/auth", service.AuthorizeUser)
 		auth.POST("/upload", service.UploadHandler)

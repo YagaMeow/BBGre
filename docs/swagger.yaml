@@ -1,0 +1,188 @@
+definitions:
+  service.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  service.NoteRequest:
+    properties:
+      content:
+        example: "123"
+        type: string
+      date:
+        example: "2024-07-06T15:16:00.000Z"
+        type: string
+    type: object
+  service.QueryRequest:
+    properties:
+      end:
+        type: string
+      max:
+        example: 100
+        type: integer
+      page:
+        example: 1
+        type: integer
+      start:
+        type: string
+    type: object
+  service.UpdateRequest:
+    properties:
+      content:
+        example: "123"
+        type: string
+      date:
+        example: "2024-07-06T15:16:00.000Z"
+        type: string
+      id:
+        type: integer
+    required:
+    - id
+    type: object
+info:
+  contact: {}
+paths:
+  /api/notes:
+    post:
+      parameters:
+      - description: 请求体
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/service.QueryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            type: string
+        "400":
+          description: 请求错误
+          schema:
+            type: string
+        "500":
+          description: 内部错误
+          schema:
+            type: string
+      summary: 获取笔记
+  /api/notes/:
+    post:
+      parameters:
+      - description: 请求体
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.NoteRequest'
+      - description: 鉴权
+        in: header
+        name: x-token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            type: string
+        "400":
+          description: 请求错误
+          schema:
+            type: string
+        "500":
+          description: 内部错误
+          schema:
+            type: string
+      summary: 创建笔记
+  /api/notes/update:
+    delete:
+      parameters:
+      - description: 请求体
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateRequest'
+      - description: token
+        in: header
+        name: x-token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            type: string
+        "400":
+          description: 请求错误
+          schema:
+            type: string
+        "500":
+          description: 内部错误
+          schema:
+            type: string
+      summary: 删除笔记
+    post:
+      parameters:
+      - description: 请求体
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateRequest'
+      - description: token
+        in: header
+        name: x-token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            type: string
+        "400":
+          description: 请求错误
+          schema:
+            type: string
+        "500":
+          description: 内部错误
+          schema:
+            type: string
+      summary: 更新笔记
+  /login:
+    post:
+      parameters:
+      - description: 用户名
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            type: string
+        "400":
+          description: 请求错误
+          schema:
+            type: string
+        "500":
+          description: 内部错误
+          schema:
+            type: string
+      summary: 登录
+swagger: "2.0"

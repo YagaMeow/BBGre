@@ -394,9 +394,11 @@ func UploadCover(c *gin.Context) {
 	newFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), fileExt)
 	dst := filepath.Join("./covers", newFileName)
 
-	if err := SizeHandler(file, newFileName, "./covers"); err != nil {
+	if path, err := SizeHandler(file, newFileName, "./covers"); err != nil {
 		middleware.Error(c, 500, "Save File Failed", err.Error())
 		return
+	} else {
+		dst = path
 	}
 
 	width, height, err := utils.GetImageDimensions(dst)
