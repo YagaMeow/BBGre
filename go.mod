@@ -48,6 +48,7 @@ require (
 	github.com/tetratelabs/wazero v1.10.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
+	golang.org/dl v0.0.0-20260820210006-17229f577778 // indirect
 	golang.org/x/arch v0.15.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect

@@ -95,3 +95,7 @@ func saveAsWebp(img image.Image, path string, quality float32) error {
 	defer out.Close()
 	return webp.Encode(out, img, webp.Options{Quality: int(quality)})
 }
+
+func uploadMedia(c *gin.Context) {
+
+}
