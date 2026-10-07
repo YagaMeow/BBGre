@@ -18,7 +18,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		claims, err := utils.ParseToken(tokenString)
 
 		if err != nil {
-			c.JSON(401, gin.H{"error": err.Error()})
+			Error(c, 401, "Unauthorized", "Authorization header is missing")
 			c.Abort()
 			return
 		} else {

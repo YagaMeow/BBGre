@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+/* 新建文章 */
 func CreateArticle(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
@@ -159,7 +160,7 @@ func DeleteArticle(c *gin.Context) {
 
 func GetArticles(c *gin.Context) {
 	var articles []model.Article
-	if err := global.DB.Order("created_at desc").Find(&articles).Error; err != nil {
+	if err := global.DB.Preload("Tags").Order("created_at desc").Find(&articles).Error; err != nil {
 		middleware.Error(c, 500, "Get articles failed", err.Error())
 		return
 	}
@@ -171,7 +172,7 @@ func GetArticles(c *gin.Context) {
 			"title":      article.Title,
 			"uri":        article.Uri,
 			"created_at": article.CreatedAt.Format(time.RFC3339),
-			"tag":        article.Tags,
+			"tags":       article.Tags,
 			"cover": gin.H{
 				"cover_url": article.CoverUrl,
 				"height":    article.CoverH,
@@ -212,7 +213,7 @@ func GetArticleByUri(c *gin.Context) {
 	uri := c.Param("uri")
 
 	var article model.Article
-	if err := global.DB.Where("uri = ?", uri).First(&article).Error; err != nil {
+	if err := global.DB.Preload("Tags").Where("uri = ?", uri).First(&article).Error; err != nil {
 		middleware.Error(c, 404, "Article not found", err.Error())
 		return
 	}

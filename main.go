@@ -42,6 +42,11 @@ func main() {
 		fmt.Println("[Gorm] Failed to migrate article database", err)
 		return
 	}
+	err = global.DB.AutoMigrate(&model.Music{})
+	if err != nil {
+		fmt.Println("[Gorm] Failed to migrate music database", err)
+		return
+	}
 	fmt.Println("[Gorm] Database migrated successfully")
 	r := gin.Default()
 
@@ -64,6 +69,9 @@ func main() {
 		public.Static("/uploads", "./uploads")
 		public.Static("/covers", "./covers")
 		public.POST("/notes", service.GetNoteList)
+		public.GET("/music", service.GetMusicList)
+		public.GET("/music/:id", service.GetMusicDetail)
+		public.GET("/music/:id/download", service.DownloadMusic)
 	}
 
 	auth := r.Group("/api")
@@ -85,6 +93,9 @@ func main() {
 		}
 		auth.POST("/auth", service.AuthorizeUser)
 		auth.POST("/upload", service.UploadHandler)
+		auth.POST("/music/upload", service.UploadMusic)
+		auth.PUT("/music/:id", service.UpdateMusic)
+		auth.DELETE("/music/:id", service.DeleteMusic)
 		auth.POST("/addtag", service.AddTagToArticle)
 		auth.POST("/removetag", service.RemoveTagFromArticle)
 	}
